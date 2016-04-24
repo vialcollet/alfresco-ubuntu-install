@@ -173,6 +173,21 @@ echoblue "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 read -e -p "Install Tomcat${ques} [y/n] " -i "n" installtomcat
 
 echo
+  echoblue "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+  echo "You need to add the dns name, port and protocol for your server(s)."
+  echo "It is important that this is is a resolvable server name."
+  echo "This information will be added to default configuration files."
+  echoblue "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+  read -e -p "Please enter the public host name for Share server (fully qualified domain name)${ques} [`hostname`] " -i "`hostname`" SHARE_HOSTNAME
+  read -e -p "Please enter the protocol to use for public Share server (http or https)${ques} [http] " -i "http" SHARE_PROTOCOL
+  read -e -p "Please enter the host name for Alfresco Repository server (fully qualified domain name)${ques} [$SHARE_HOSTNAME] " -i "$SHARE_HOSTNAME" REPO_HOSTNAME
+  
+  read -e -p "Install Share config file (recommended)${ques} [y/n] " -i "n" installshareconfig
+  
+  read -e -p "Install Postgres JDBC Connector${ques} [y/n] " -i "n" installpg
+  read -e -p "Install Mysql JDBC Connector${ques} [y/n] " -i "n" installmy
+
+echo
 echoblue "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
 echo "Nginx can be used as frontend to Tomcat."
 echo "This installation will add config default proxying to Alfresco tomcat."
@@ -228,7 +243,10 @@ echo "This install place downloaded files in the $ALF_HOME/addons and then use t
 echo "apply.sh script to add them to tomcat/webapps. Se this script for more info."
 echoblue "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
 read -e -p "Add Alfresco Repository war file${ques} [y/n] " -i "n" installwar
+read -e -p "Add Share Client war file${ques} [y/n] " -i "n" installsharewar
 
+
+read -e -p "Add Google docs integration${ques} [y/n] " -i "n" installgoogledocs
 
 echo
 echoblue "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
@@ -320,19 +338,12 @@ if [ "$installtomcat" = "y" ]; then
   sudo mkdir -p $CATALINA_HOME/shared/lib
   # Add endorsed dir
   sudo mkdir -p $CATALINA_HOME/endorsed
-  echo
-  echoblue "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
-  echo "You need to add the dns name, port and protocol for your server(s)."
-  echo "It is important that this is is a resolvable server name."
-  echo "This information will be added to default configuration files."
-  echoblue "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
-  read -e -p "Please enter the public host name for Share server (fully qualified domain name)${ques} [`hostname`] " -i "`hostname`" SHARE_HOSTNAME
-  read -e -p "Please enter the protocol to use for public Share server (http or https)${ques} [http] " -i "http" SHARE_PROTOCOL
+  
   SHARE_PORT=80
   if [ "${SHARE_PROTOCOL,,}" = "https" ]; then
     SHARE_PORT=443
   fi
-  read -e -p "Please enter the host name for Alfresco Repository server (fully qualified domain name)${ques} [$SHARE_HOSTNAME] " -i "$SHARE_HOSTNAME" REPO_HOSTNAME
+  
 
   # Add default alfresco-global.propertis
   ALFRESCO_GLOBAL_PROPERTIES=/tmp/alfrescoinstall/alfresco-global.properties
@@ -343,7 +354,7 @@ if [ "$installtomcat" = "y" ]; then
   sed -i "s/@@ALFRESCO_REPO_SERVER@@/$REPO_HOSTNAME/g" $ALFRESCO_GLOBAL_PROPERTIES
   sudo mv $ALFRESCO_GLOBAL_PROPERTIES $CATALINA_HOME/shared/classes/
 
-  read -e -p "Install Share config file (recommended)${ques} [y/n] " -i "n" installshareconfig
+  
   if [ "$installshareconfig" = "y" ]; then
     SHARE_CONFIG_CUSTOM=/tmp/alfrescoinstall/share-config-custom.xml
     sudo curl -# -o $SHARE_CONFIG_CUSTOM $BASE_DOWNLOAD/tomcat/share-config-custom.xml
@@ -353,13 +364,13 @@ if [ "$installtomcat" = "y" ]; then
   fi
 
   echo
-  read -e -p "Install Postgres JDBC Connector${ques} [y/n] " -i "n" installpg
+  
   if [ "$installpg" = "y" ]; then
 	curl -# -O $JDBCPOSTGRESURL/$JDBCPOSTGRES
 	sudo mv $JDBCPOSTGRES $CATALINA_HOME/lib
   fi
   echo
-  read -e -p "Install Mysql JDBC Connector${ques} [y/n] " -i "n" installmy
+  
   if [ "$installmy" = "y" ]; then
     cd /tmp/alfrescoinstall
 	curl -# -L -O $JDBCMYSQLURL/$JDBCMYSQL
@@ -566,7 +577,7 @@ else
   echo
 fi
 
-read -e -p "Add Share Client war file${ques} [y/n] " -i "n" installsharewar
+
 if [ "$installsharewar" = "y" ]; then
 
   echogreen "Downloading Share war file..."
@@ -594,7 +605,7 @@ cd /tmp/alfrescoinstall
 #    fi
 #fi
 
-read -e -p "Add Google docs integration${ques} [y/n] " -i "n" installgoogledocs
+
 if [ "$installgoogledocs" = "y" ]; then
   echo "Downloading Google docs addon..."
   if [ "$installwar" = "y" ]; then
